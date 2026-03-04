@@ -1,0 +1,3 @@
+display_name: Project Architecture Analyzer
+short_description: Analyze project architecture and generate phased requirement planning with actionable goals
+default_prompt: Analyze the current project architecture and create a comprehensive development roadmap with short-term, mid-term, and long-term goals

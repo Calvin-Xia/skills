@@ -1,0 +1,3 @@
+display_name: PRD Generator
+short_description: Analyze repositories and generate Product Requirements Documents for new features
+default_prompt: Analyze this repository's structure, identify potential new features or improvements, and generate a comprehensive PRD document.
