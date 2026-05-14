@@ -11,6 +11,7 @@ This directory contains AI agent skills that extend agent capabilities for speci
 
 | Skill | Description | Trigger Keywords |
 |-------|-------------|------------------|
+| [course-review-material](./course-review-material/SKILL.md) | Parse course materials into chapter-organized Markdown review notes | "整理复习资料", "期末复习", "parse course materials" |
 | [prd-generator](./prd-generator/SKILL.md) | Generate PRD documents from repository analysis | "analyze repository", "generate PRD", "suggest features" |
 | [project-architecture-analyzer](./project-architecture-analyzer/SKILL.md) | Analyze architecture and create development roadmaps | "analyze architecture", "development roadmap", "improvements" |
 

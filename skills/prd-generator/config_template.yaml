@@ -1,0 +1,34 @@
+project:
+  name: ""
+  type: ""          # web-app, api, cli, library, mobile, serverless
+  description: ""
+  repo_path: "."
+
+analysis:
+  languages: []
+  depth: standard   # quick | standard | deep
+  focus_areas:
+    - features
+    - security
+    - performance
+    - ux
+    - devops
+    - testing
+    - documentation
+  scope_dirs: []    # Limit analysis to specific directories
+  exclude_dirs:
+    - node_modules
+    - .git
+    - __pycache__
+    - venv
+    - dist
+    - build
+
+output:
+  format: full_prd  # full_prd | feature_list | skill_creation
+  include_user_stories: true
+  include_technical_specs: true
+  include_roadmap: true
+  include_risk_assessment: true
+  prioritization: moscow   # moscow | impact_effort | none
+  language: "en"

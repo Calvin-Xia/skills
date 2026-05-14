@@ -1,0 +1,33 @@
+project:
+  name: ""
+  path: "."
+
+analysis:
+  phases:
+    - tech_stack
+    - dependencies
+    - architecture_review
+    - security_scan
+    - planning
+  scope_dirs: []
+  exclude_dirs:
+    - node_modules
+    - .git
+    - __pycache__
+    - venv
+    - dist
+    - build
+
+planning:
+  short_term_weeks: 8
+  mid_term_weeks: 24
+  team_size: 0
+  priorities:
+    - security
+    - performance
+    - maintainability
+
+output:
+  generate_report: true
+  format: markdown
+  include_appendix: true

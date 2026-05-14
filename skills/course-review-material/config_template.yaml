@@ -1,0 +1,21 @@
+course:
+  name: ""
+  semester: ""
+  instructor: ""
+
+files:
+  - path: ""
+    type: docx
+    label: ""
+
+chapters:
+  - id: 1
+    title: ""
+    keywords: []
+    match_patterns: []
+
+output:
+  integrated_dir: "review-notes"
+  image_format: "gfm"
+  formula_format: "latex"
+  language: "zh-CN"

@@ -1,20 +1,50 @@
 ---
 name: project-architecture-analyzer
-description: Systematically analyze project architecture and generate phased requirement planning. Use when users request architecture analysis, project planning, technical debt assessment, improvement suggestions, or phased goal setting. Triggers on queries like "analyze my project architecture", "create a development roadmap", "what improvements does my project need", or "plan next steps for my codebase".
+description: Use when a user requests architecture analysis, project planning, technical debt assessment, improvement suggestions, or phased goal setting. Triggers on queries like "analyze my project architecture", "create a development roadmap", "what improvements does my project need", or "plan next steps for my codebase".
 ---
 
 # Project Architecture Analyzer
 
-Systematically analyze project architecture and generate phased requirement planning with actionable goals.
+Analyze project architecture and generate phased requirement planning with actionable goals.
+
+```dot
+digraph when_flowchart {
+    rankdir=TB;
+    start [label="User asks about codebase analysis/planning?" shape=diamond];
+    single [label="Just one file review?" shape=diamond];
+    use [label="Use this skill" shape=box];
+    no_code [label="No codebase available?" shape=diamond];
+    dont [label="Do NOT use" shape=box];
+    skip [label="Real-time debugging/bug fixing?" shape=diamond];
+
+    start -> single [label="yes"];
+    single -> dont [label="yes"];
+    single -> no_code [label="no"];
+    no_code -> dont [label="yes"];
+    no_code -> skip [label="no"];
+    skip -> dont [label="yes"];
+    skip -> use [label="no"];
+}
+```
+
+## When to Use
+
+**Use this skill when:**
+- User requests architecture analysis of a codebase
+- User wants a development roadmap or phased planning
+- User asks about technical debt or improvement priorities
+- User needs feasibility assessment or risk analysis
+- Project has grown and needs architectural review
+
+**Do NOT use when:**
+- User wants a quick code review of a single file
+- User is asking for real-time debugging or bug fixing
+- No codebase is available for analysis
+- User wants to write features (use prd-generator for planning first)
 
 ## Overview
 
-This skill provides comprehensive project analysis including:
-- Technology stack detection and evaluation
-- Module architecture and dependency analysis
-- Performance bottleneck and security risk identification
-- Phased requirement planning (short/mid/long term)
-- Feasibility assessment with measurable acceptance criteria
+This skill provides: tech stack detection, module dependency analysis, performance/security risk identification, phased planning (short/mid/long term), and feasibility assessment with measurable criteria.
 
 ## Workflow
 
@@ -219,63 +249,11 @@ Or use the template in `assets/report-template/architecture-report.md`.
 
 ## Output Format
 
-### Architecture Analysis Report
+Use the report templates in `assets/report-template/`:
+- **[architecture-report.md](assets/report-template/architecture-report.md)** — Architecture analysis report structure
+- **[roadmap-template.md](assets/report-template/roadmap-template.md)** — Phased requirement planning structure
 
-```markdown
-# Project Architecture Analysis Report
-
-## Executive Summary
-- Project Type: [Classification]
-- Tech Stack: [Key technologies]
-- Health Score: [Excellent/Good/Fair/Needs Improvement]
-
-## Technology Stack Analysis
-### Languages
-### Frameworks
-### Databases
-### DevOps
-
-## Module Architecture
-### Entry Points
-### Core Modules
-### Utility Modules
-### Dependency Graph
-
-## Issues and Risks
-### P0 - Critical
-### P1 - High
-### P2 - Medium
-### P3 - Low
-
-## Recommendations
-```
-
-### Requirement Planning Document
-
-```markdown
-# Phased Requirement Planning
-
-## Project Background
-[Key findings from architecture analysis]
-
-## Short-term Goals (1-2 months)
-[Quick wins and critical fixes]
-
-## Mid-term Goals (3-6 months)
-[Architecture improvements]
-
-## Long-term Goals (6+ months)
-[Strategic initiatives]
-
-## Feasibility Assessment
-### Technical Feasibility
-### Resource Matching
-### Risk Matrix
-
-## Appendix
-### Glossary
-### Reference Documents
-```
+Key sections to include: Executive Summary, Tech Stack Analysis, Module Architecture, Issues (P0-P3), Recommendations, Feasibility Assessment.
 
 ## Reference Files
 
@@ -294,6 +272,76 @@ Or use the template in `assets/report-template/architecture-report.md`.
 | `scripts/analyze_tech_stack.py` | Detect project technologies |
 | `scripts/detect_dependencies.py` | Analyze module dependencies |
 | `scripts/generate_report.py` | Generate structured reports |
+
+## Quick Reference
+
+| Task | Approach |
+|------|----------|
+| Detect tech stack | `python scripts/analyze_tech_stack.py <path>` |
+| Analyze dependencies | `python scripts/detect_dependencies.py <path>` |
+| Generate report | `python scripts/generate_report.py tech_stack.json dependencies.json [name]` |
+| Review directory structure | Use `LS` tool on key directories |
+| Check config files | Read `package.json`, `go.mod`, `pyproject.toml`, etc. |
+| Classify issue severity | Use P0-P3 priority table (see Phase 2) |
+| Generate roadmap | Template in `assets/report-template/roadmap-template.md` |
+| Assess risk | Framework in `references/risk-assessment.md` |
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Skipping automated scripts and going straight to manual review | Run `analyze_tech_stack.py` + `detect_dependencies.py` first for objective data |
+| Treating all issues as equal priority | Classify with P0-P3 severity; focus on P0/P1 first |
+| Forgetting to validate script output | Automated tools may miss edge cases — always manually verify entry points and critical paths |
+| Making vague recommendations | Use SMART criteria: Specific, Measurable, Achievable, Relevant, Time-bound |
+| Ignoring team constraints | Recommendations must account for team size, timeline, and budget |
+| Proposing large rewrites instead of incremental steps | Break changes into smaller, safe iterations |
+
+## STOP Signs
+
+These are **hard stops** — when you encounter them, you MUST take the specified action:
+
+| STOP Sign | Required Action |
+|-----------|-----------------|
+| 🔴 No `config_template.yaml` exists | MUST generate or ask user for config before starting analysis |
+| 🔴 User says "just take a quick look" | MUST remind user that proper analysis requires running scripts first |
+| 🔴 Script execution fails (missing deps, wrong path) | MUST fix environment issues. Do not skip to manual review. |
+| 🔴 Security-sensitive files detected (`.env`, secrets) | MUST NOT expose. Note existence but do not read contents into report. |
+| 🔴 Project has 0 dependencies or is empty | MUST warn user and ask if analysis should proceed on limited data |
+| 🔴 Script output contradicts manual findings | MUST flag discrepancy. Do not silently trust one over the other. |
+
+## Rationalization Counter-Table
+
+When you catch yourself thinking these thoughts, read the reality:
+
+| Excuse | Reality |
+|--------|---------|
+| "This project is small, I can skip the scripts" | Scripts provide objective data even for small projects. Manual review introduces bias. |
+| "The dependency graph looks fine, no need to run detect_dependencies.py" | Circular dependencies are not visible to human eye — only automated detection catches them. |
+| "I'll just look at package.json and guess the architecture" | Configuration files only tell part of the story. Directory structure and entry points matter too. |
+| "P2/P3 issues aren't important, I'll skip them" | Today's P3 is tomorrow's P0. Document all issues for the record. |
+| "The user didn't specify team size/budget, so I'll skip feasibility" | Ask the user for constraints. Vague plans without resource matching are useless. |
+| "A full rewrite would solve all these problems" | Large rewrites rarely succeed. Recommend incremental improvements unless the codebase is truly unsalvageable. |
+
+## Red Flags — STOP and Review
+
+- [ ] You're about to skip running analyze_tech_stack.py or detect_dependencies.py
+- [ ] You're making recommendations without P0-P3 priority classification
+- [ ] You're about to propose a large rewrite as the primary recommendation
+- [ ] You're ignoring team size, timeline, or budget in feasibility assessment
+- [ ] You haven't validated script output against manual directory review
+- [ ] You're generating a report without asking user about their priorities
+
+**Any checkbox checked means: stop, fix the issue, then continue.**
+
+## Edge Cases
+
+1. **Monorepo with multiple projects**: Ask user which sub-project(s) to analyze. Run scripts per sub-project.
+2. **Project with no package manager files** (raw scripts): Tech stack detection relies on file extensions and directory patterns only.
+3. **Very large codebase (>10k files)**: Run scripts with `scope_dirs` in config to limit analysis scope.
+4. **Script execution blocked** (no Python, permission issues): Fall back to manual analysis using config file inspection and directory traversal.
+5. **Mixed language project**: Document each language separately. Note integration points between language ecosystems.
+6. **Legacy project (no VCS, no docs)**: Flag as high-risk. Recommend documentation and VCS setup as P0 goals.
 
 ## Best Practices
 
