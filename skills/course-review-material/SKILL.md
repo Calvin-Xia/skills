@@ -1,10 +1,11 @@
 ---
 name: course-review-material
-description: Use when a college student needs to parse course lecture materials
+description: >-
+  Use when a college student needs to parse course lecture materials
   (docx, pptx, pdf, txt) and organize them into structured chapter-by-chapter
-  Markdown review notes for exam preparation. Triggers: "整理复习资料",
-  "parse course materials", "extract lecture content", "organize study notes
-  from slides", "复习资料生成", "课程复习", "期末复习", "开卷考试资料整理".
+  Markdown review notes for exam preparation. Triggers: 整理复习资料,
+  课程复习, 期末复习, 开卷考试资料整理, parse course materials,
+  extract lecture content, organize study notes from slides.
 ---
 
 # Course Review Material Generator
@@ -40,7 +41,12 @@ User mentions "复习" or "整理" with course files?
 1. **Python libraries**: Run `pip install python-docx python-pptx pdfplumber PyMuPDF Pillow PyYAML chardet` if any are missing. Verify with:
    `python -c "import docx, pptx, pdfplumber, fitz, PIL, yaml, chardet; print('OK')"`
 
-2. **Multimodal capability**: Required for image recognition (formulas, diagrams, embedded text in images).
+2. **Slide rendering dependency** (for image-only PPT slides): `extract_pptx.py --render-slides` requires:
+   - **Windows**: Microsoft PowerPoint (auto-detected via COM)
+   - **macOS/Linux**: LibreOffice (`libreoffice --headless`). Install: `apt install libreoffice-impress` or `brew install libreoffice`
+   - Without either, image-only slides will show a placeholder message; use `--no-render` to skip.
+
+3. **Multimodal capability**: Required for image recognition (formulas, diagrams, embedded text in images).
    - **Available** (Claude Vision, GPT-4V, etc.): Use for all image tasks.
    - **Not available**: Display warning and fall back to local OCR (`pip install pytesseract paddleocr`).
      > ⚠️ No multimodal model detected. Using local OCR fallback — formula recognition will be limited.
@@ -87,126 +93,15 @@ For detailed processing strategies per file type, see **[references/file-process
 
 ## Content Type Handling
 
-### Text Content
+Text content must be preserved verbatim. Images need multimodal recognition (or OCR fallback). All formulas must be converted to LaTeX. Code blocks wrap with language tags. Tables convert to Markdown format.
 
-```
-Rule: PRESERVE ORIGINAL TEXT VERBATIM. Do not paraphrase or rewrite.
-```
+For complete processing strategies per content type, see **[references/content-handling.md](references/content-handling.md)**.
 
-- Keep the teacher's exact phrasing, examples, and explanations
-- Apply heading hierarchy based on document structure or chapter config
-- Preserve bold (`**text**`), italic (`*text*`), and list formatting
-- Use blockquotes (`>`) for highlighted/boxed key points from slides
+## Chapter Detection
 
-### Image Content
+Chapter assignment uses a 5-priority strategy: YAML config patterns → standard heading styles → Chinese numbering patterns → font size mutation → fallback to unclassified.
 
-```
-Decision Tree:
-├── Multimodal model available?
-│   ├── YES → Send image to model with prompt: "Describe this image in detail.
-│   │         If it contains formulas, output them as LaTeX. If it contains text,
-│   │         transcribe it. If it's a diagram, describe its structure and labels."
-│   │         → Inline the recognized content into markdown
-│   └── NO → Fall back to local OCR (pytesseract/PaddleOCR)
-│             → Inline recognized text, flag low-confidence results
-└── Recognition fails or image is purely decorative?
-    └── Use GFM format: ![description](images/img_001.png)
-```
-
-**Image recognition prompt template (for multimodal models):**
-
-```
-Analyze this image from course materials. Output requirements:
-1. If it contains mathematical formulas → output them as LaTeX ($...$ or $$...$$)
-2. If it contains text → transcribe the text exactly
-3. If it's a diagram/chart → describe the structure, labels, and key information
-4. If it's a photo/illustration → describe what it shows in one sentence
-5. Always start with a concise label like **[Figure: xxx]** or **[Formula]** or **[Table]**
-```
-
-**Annotation:** Each inline recognition result must be annotated with its source:
-```markdown
-<!-- image source: img_001.png -->
-```
-
-### Formulas
-
-```
-Rule: ALL formulas MUST be converted to LaTeX. No formula screenshots.
-```
-
-| Scenario | Action |
-|----------|--------|
-| Text already contains LaTeX (`$...$`) | Preserve as-is |
-| Text contains plain-text formula (`E=mc^2`) | Wrap in `$...$` |
-| Formula in image | Multimodal model → output LaTeX |
-| Complex formula that cannot be expressed in LaTeX | Fallback: `![Formula](images/formula_001.png)` |
-| Chemical equations | Use plain text or `\ce{...}` if mhchem is available |
-
-**Common LaTeX patterns in Chinese course materials:**
-- Fractions: `\frac{分子}{分母}`
-- Limits: `\lim_{x \to 0}`
-- Integrals: `\int_{a}^{b}`
-- Summation: `\sum_{i=1}^{n}`
-- Matrices: `\begin{pmatrix} ... \end{pmatrix}`
-
-### Code and Algorithms
-
-- Wrap code blocks with language tag: ` ```python ... ``` `
-- Pseudo-code: use ` ```text ``` ` or ` ```algorithm ``` `
-- Preserve indentation exactly
-- Add brief context comment if the code purpose is unclear from surrounding text
-
-### Tables
-
-Convert all tables to Markdown table format:
-
-```markdown
-| Header 1 | Header 2 | Header 3 |
-|----------|----------|----------|
-| cell 1   | cell 2   | cell 3   |
-```
-
-For wide tables, note if the table is truncated and suggest the user review the original.
-
-## Chapter Detection Heuristics
-
-Chapter detection is a critical step. Use this priority order:
-
-### Priority 1: YAML Configuration (most reliable)
-
-Match content against `chapters[].match_patterns` in `course-config.yaml`. Each pattern can be:
-- Exact string match: `"第一章 函数与极限"`
-- Regex pattern: `"第[一1]章"`
-- Keyword presence: matched against `chapters[].keywords`
-
-### Priority 2: Standard Heading Styles
-
-- **docx**: Paragraphs with `style.name` matching `'Heading 1'`, `'Heading 2'`, etc.
-- **pptx**: Slides with title placeholders or largest font size + bold text
-- **pdf**: Text with largest font size on a page (from `pdfplumber` char analysis)
-- **txt/md**: Lines matching `^#+\s+` markdown heading pattern
-
-### Priority 3: Numbering Patterns
-
-Detect common Chinese academic numbering:
-- `第一章`, `第二章`, ... → Chapter
-- `第1章`, `第2章`, ... → Chapter
-- `§1`, `§2`, ... → Chapter/section
-- `一、`, `二、`, ... → Section (under a chapter)
-- `1.1`, `1.2`, ... → Subsection
-- `Chapter 1`, `Ch. 1` → Chapter (English)
-
-### Priority 4: Font Size Mutation
-
-When no structural clues exist:
-- Text with font size ≥ 18pt and bold → potential chapter heading
-- Text with font size ≥ 14pt and bold → potential section heading
-- Compare against median body text size to detect outliers
-
-### Priority 5: Fallback
-
-Content that cannot be assigned to any chapter → mark as `## 未分类内容` (Unclassified Content) and prompt user to specify chapter manually.
+For the complete detection heuristics with all priority levels, see **[references/chapter-detection.md](references/chapter-detection.md)**.
 
 ## YAML Configuration
 
@@ -257,13 +152,40 @@ Each chapter file follows the structure in **[assets/output-templates.md](assets
 
 The index file (`index.md`) provides a master table of contents linking to all chapter files.
 
+## Example
+
+**Input:** `高数讲义.docx` + `高数PPT.pptx` + `course-config.yaml` (3 chapters defined)
+
+**Phase 1** — per-file extraction:
+```
+python scripts/extract_docx.py 高数讲义.docx
+python scripts/extract_pptx.py 高数PPT.pptx --render-slides
+```
+
+**Phase 2** — cross-file integration:
+```
+python scripts/integrate_chapters.py course-config.yaml
+```
+
+**Output:**
+```
+review-notes/
+├── index.md                      # 目录: 3个章节索引
+├── ch01-函数与极限.md             # 120 blocks (from 讲义 + PPT)
+├── ch02-导数与微分.md             # 95 blocks
+└── ch03-积分.md                   # 80 blocks
+```
+
+Each chapter file begins with metadata (`# 第1章 函数与极限`, `> **来源**: ...`, `> **关键词**: ...`) followed by the merged content from all source files with source annotations, LaTeX formulas, and inlined image recognition results.
+
 ## Cross-File Deduplication
 
 When merging multiple source files into chapters:
 
 1. **Exact match**: If two paragraphs are identical (after normalizing whitespace), keep only one, note the sources.
-2. **Near-duplicate** (>80% similarity via `difflib.SequenceMatcher`): Keep the more complete version, note the other source.
-3. **Complementary content**: If two files cover the same topic differently, merge with source annotations:
+2. **Near-duplicate** (>95% similarity via `difflib.SequenceMatcher`): Keep the more complete version, note the other source.
+3. **Possible duplicate** (85%-95% similarity): Keep both blocks, flag for manual review. Common in course materials where PPT bullet points and lecture text are similar but complementary.
+4. **Complementary content**: If two files cover the same topic differently, merge with source annotations:
 
 ```markdown
 > **讲义补充**: {补充内容}
@@ -271,7 +193,7 @@ When merging multiple source files into chapters:
 > **PPT要点**: {PPT中的要点}
 ```
 
-4. **Conflict**: If two files contradict, keep both with a conflict marker:
+5. **Conflict**: If two files contradict, keep both with a conflict marker:
 
 ```markdown
 > ⚠️ **内容不一致**:
@@ -316,6 +238,14 @@ These are **hard stops** — when you encounter them, you MUST take the specifie
 | 🔴 Content cannot be assigned to any chapter | MUST mark as `## 未分类内容` and ask user where it belongs. Do not guess. |
 | 🔴 No `course-config.yaml` exists | MUST generate it interactively before starting extraction. |
 | 🔴 Encrypted/protected file | MUST ask user for password or to decrypt first. Do not skip. |
+
+### Why These Are Hard Stops
+
+- **Pure image PDF/PPT**: `pdfplumber` extracts zero text from scanned or image-only pages. Without multimodal recognition, 30-50% of content (formulas, diagrams, charts) would be silently discarded.
+- **Formulas → LaTeX**: Screenshot-based formulas are not searchable or copyable during open-book exams. LaTeX ensures uniform typesetting and exam-readiness across all chapter files.
+- **Chapter-by-chapter splitting**: Single large files are harder to navigate during timed open-book exams. Split files allow quick jumping to specific chapters.
+- **Interactive config**: Without `course-config.yaml`, chapter assignment is guesswork based on imperfect heuristics. The user's explicit chapter structure is the most reliable signal.
+- **Encrypted files**: Attempting to process encrypted files produces meaningless output. The user must decrypt first — no workaround exists.
 
 ## Rationalization Counter-Table
 

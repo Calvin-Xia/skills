@@ -1,1 +1,3 @@
 .trae/
+*.pdf
+__pycache__/

@@ -29,7 +29,7 @@ def extract_slide_text_and_images(slide, slide_num, images_dir):
             table = shape.table
             rows = []
             for row in table.rows:
-                cells = [cell.text.replace("\n", " ") for cell in row.cells]
+                cells = [cell.text.replace("\n", " ") if cell.text else "" for cell in row.cells]
                 rows.append(cells)
             if rows:
                 slide_text.append("\n| " + " | ".join(rows[0]) + " |")
@@ -76,6 +76,7 @@ def extract_pptx(filepath, output_dir, render_slides=False, dpi=150):
 
     md_lines = []
     raw_texts = []
+    image_only_count = 0
 
     for idx, slide in enumerate(prs.slides, 1):
         slide_header = f"\n## Slide {idx}\n"
@@ -92,12 +93,17 @@ def extract_pptx(filepath, output_dir, render_slides=False, dpi=150):
             md_lines.append(f"![Slide {idx} image](images/{img_ref})\n")
             md_lines.append(f"<!-- image source: {img_ref} -->\n")
 
-        if not slide_text and not image_refs and render_slides:
-            md_lines.append(f"![Slide {idx} screenshot](slides/slide_{idx:03d}.png)\n")
-            md_lines.append(f"<!-- slide source: slide_{idx:03d}.png (needs multimodal recognition) -->\n")
+        if not slide_text and not image_refs:
+            image_only_count += 1
+            if render_slides:
+                md_lines.append(f"![Slide {idx} screenshot](slides/slide_{idx:03d}.png)\n")
+                md_lines.append(f"<!-- slide source: slide_{idx:03d}.png (needs multimodal recognition) -->\n")
+            else:
+                md_lines.append("*(This slide appears to be image-only. Use --render-slides to enable recognition.)*\n")
 
-        if not slide_text and not image_refs and not render_slides:
-            md_lines.append("*(This slide appears to be image-only. Use --render-slides to enable recognition.)*\n")
+    if image_only_count and not render_slides:
+        print(f"[warn] {image_only_count} image-only slide(s) detected but --render-slides not enabled")
+        print("[warn] These slides need multimodal recognition. Re-run with -r/--render-slides.")
 
     text_dir = os.path.join(output_dir, "text")
     os.makedirs(text_dir, exist_ok=True)

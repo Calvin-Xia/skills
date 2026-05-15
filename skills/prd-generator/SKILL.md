@@ -1,15 +1,19 @@
 ---
 name: prd-generator
-description: Use when analyzing a code repository to identify feature gaps, improvement opportunities, or generate Product Requirements Documents. Triggers on queries like "analyze this repository", "suggest new features", "generate a PRD", "what features are missing", "plan feature development". Supports JavaScript/TypeScript, Python, Go, Rust, Java/Kotlin.
+description: >-
+  Use when a user asks to analyze a code repository for feature opportunities,
+  generate a PRD, plan feature development, or asks what features are missing
+  or what can be improved in a project. Triggers on queries like "analyze this
+  repository", "suggest new features", "generate a PRD", "what features are
+  missing", "plan feature development". Supports JavaScript/TypeScript, Python,
+  Go, Rust, Java/Kotlin.
 ---
 
 # PRD Generator
 
-Generate comprehensive Product Requirements Documents by analyzing repository structure, existing features, and identifying innovation opportunities.
+## Overview
 
-## Core Principle
-
-**Analyze before you recommend.** Every feature proposal must be grounded in the repository's actual structure, existing features, and architecture patterns. Never propose features based on assumptions about what a project of this type "should" have.
+**Analyze before you recommend.** Every feature proposal must be grounded in the repository's actual structure, existing features, and architecture patterns — never based on assumptions.
 
 ```dot
 digraph when_flowchart {
@@ -44,6 +48,15 @@ digraph when_flowchart {
 - User only wants a code review or bug report
 - No repository is available for analysis
 - User wants to edit or annotate existing documents
+
+## Environment Check
+
+1. **Agent tools required**: This skill uses `LS`, `Glob`, `Grep`, and `Read` to analyze repositories. No scripts are needed — all analysis is agent-driven.
+
+2. **Optional Python library**: For YAML config parsing, `pip install PyYAML` may be needed.
+   `python -c "import yaml; print('OK')"`
+
+3. **Repository access**: The target repository must be accessible and readable. For private repos, ensure authentication is configured.
 
 ## Workflow
 
@@ -160,13 +173,28 @@ Acceptance Criteria:
 - **[feature-templates.md](references/feature-templates.md)**: Common feature templates by category
 - **[prd-template.md](references/prd-template.md)**: Complete PRD document template
 
-## Output Options
+## Output Format
 
 When generating output, offer these options:
 
 1. **Full PRD** - Complete document with all sections
 2. **Feature List** - Prioritized list of recommended features
 3. **Skill Creation** - Generate a new skill in the repository's `skills/` folder
+
+## Example
+
+**Input:** A repository `express-api/` with `package.json` (Express, no auth), 8 route files, 1 SQLite schema.
+
+**Phase 1-3 — Discovery & Analysis:**
+- Tech stack: Express 4.x, SQLite, no auth middleware, no rate limiting, 0 tests
+- Existing features: CRUD for 3 resources, basic error handling
+- Gaps identified: Authentication, rate limiting, input validation, test coverage, API docs
+
+**Phase 4-5 — PRD Output:**
+```
+prd-output/
+└── express-api-security-prd.md     # 7 sections: Exec Summary, Problem Statement, 3 User Stories (JWT auth, rate limiting, input validation), Tech Specs, Roadmap (3 sprints), Success Metrics, Risk Assessment
+```
 
 ## Quick Reference
 
@@ -203,8 +231,13 @@ These are **hard stops** — when you encounter them, you MUST take the specifie
 | 🔴 Proposed feature already exists in codebase | MUST verify by grepping the codebase. Do not recommend features that are already implemented. |
 | 🔴 Feature recommendation contradicts project architecture | MUST explain the contradiction. E.g., recommending SSR for a static SPA requires justification. |
 | 🔴 PRD template fields are empty or skipped | MUST fill all required sections (Executive Summary, Problem Statement, User Stories, Success Metrics, Risk Assessment) |
-| 🔴 No `config_template.yaml` exists | MUST generate or ask user for config. Do not assume default values. |
 | 🔴 Empty or near-empty repository | MUST warn user that analysis will be limited and PRD will be high-level only |
+
+### Why These Are Hard Stops
+
+- **Analysis before recommendations**: Proposing features without understanding the codebase leads to irrelevant or duplicate suggestions. Phase 1-3 analysis is the evidence base for all Phase 4-5 output.
+- **No duplicate feature proposals**: Recommending a feature that already exists wastes time and erodes trust. Always grep the codebase first.
+- **PRD template completeness**: Skipping sections like Success Metrics or Risk Assessment turns a PRD into a wish list. Complete templates ensure actionable, measurable plans.
 
 ## Rationalization Counter-Table
 

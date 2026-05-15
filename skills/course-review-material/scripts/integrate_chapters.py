@@ -28,6 +28,9 @@ def load_config(config_path):
     with open(config_path, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
+    for ch in config.get("chapters", []):
+        ch["id"] = int(ch["id"])
+
     config["_config_dir"] = str(config_path.parent)
     return config
 
@@ -38,7 +41,7 @@ def load_extracted_content(config):
 
     for file_entry in config.get("files", []):
         file_path = config_dir / file_entry["path"]
-        extracted_md = file_path.parent / file_path.stem / "extracted.md"
+        extracted_md = _find_extracted_md(file_path, config_dir, file_entry)
 
         if not extracted_md.exists():
             print(f"[warn] extracted.md not found for {file_entry['path']} at {extracted_md}")
@@ -54,6 +57,24 @@ def load_extracted_content(config):
     return all_blocks
 
 
+def _find_extracted_md(file_path, config_dir, file_entry):
+    extracted_md = file_path.parent / file_path.stem / "extracted.md"
+    if extracted_md.exists():
+        return extracted_md
+
+    stem = file_path.stem
+    alt_name = file_path.parent / stem / "extracted.md"
+    if alt_name != extracted_md and alt_name.exists():
+        return alt_name
+
+    config_adjacent = config_dir / file_path.name
+    candidate = config_adjacent.parent / config_adjacent.stem / "extracted.md"
+    if candidate.exists():
+        return candidate
+
+    return extracted_md
+
+
 def split_into_blocks(content, source_label):
     blocks = []
     current_section = ""
@@ -61,10 +82,9 @@ def split_into_blocks(content, source_label):
     lines = content.split("\n")
 
     section_pattern = re.compile(r"^#{1,3}\s+")
-    page_slide_pattern = re.compile(r"^#{1,3}\s+(Page|Slide)\s+\d+", re.IGNORECASE)
 
     for line in lines:
-        if section_pattern.match(line) and not page_slide_pattern.match(line):
+        if section_pattern.match(line):
             if current_content:
                 blocks.append({
                     "section": current_section,
@@ -142,24 +162,37 @@ def deduplicate_blocks(blocks):
         return blocks
 
     deduplicated = [blocks[0]]
+    possible_dup_count = 0
 
     for block in blocks[1:]:
         is_dup = False
+        is_possible = False
         for existing in deduplicated:
             ratio = SequenceMatcher(
                 None,
                 block["content"].replace("\n", " ").strip(),
                 existing["content"].replace("\n", " ").strip(),
             ).ratio()
-            if ratio > 0.85:
+            if ratio > 0.95:
                 is_dup = True
                 existing.setdefault("sources", [existing["source"]])
                 if block["source"] not in existing["sources"]:
                     existing["sources"].append(block["source"])
                 break
+            elif ratio > 0.85:
+                is_possible = True
 
-        if not is_dup:
-            deduplicated.append(block)
+        if is_dup:
+            continue
+
+        if is_possible:
+            block["_possible_dup"] = True
+            possible_dup_count += 1
+
+        deduplicated.append(block)
+
+    if possible_dup_count:
+        print(f"[dedup] {possible_dup_count} possible duplicates (85%-95% similarity) kept for review")
 
     return deduplicated
 
@@ -246,9 +279,13 @@ def write_index(output_dir, chapters, chapter_files, config, unassigned_path=Non
 
     config_dir = Path(config["_config_dir"])
     for file_entry in config.get("files", []):
-        file_path = file_entry["path"]
-        extracted_md = Path(file_path).parent / Path(file_path).stem / "extracted.md"
-        lines.append(f"| {file_entry.get('label', file_path)} | [{extracted_md}]({extracted_md}) |")
+        file_path = config_dir / file_entry["path"]
+        extracted_md = file_path.parent / file_path.stem / "extracted.md"
+        try:
+            rel_path = os.path.relpath(extracted_md, output_dir)
+        except ValueError:
+            rel_path = str(extracted_md)
+        lines.append(f"| {file_entry.get('label', file_entry['path'])} | [{rel_path}]({rel_path}) |")
 
     lines.append("")
 

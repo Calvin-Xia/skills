@@ -6,11 +6,11 @@ Detailed processing strategies for each supported file type.
 
 | Aspect | Strategy |
 |--------|----------|
-| Encoding detection | Use `chardet` to detect and convert to UTF-8 |
+| Encoding detection | Use `chardet` to detect and read with correct encoding; output always written as UTF-8 |
 | Text extraction | Read directly |
-| Structure | Preserve original markdown headings; detect chapter/section boundaries |
+| Structure | Preserve original markdown headings verbatim (no restructuring); chapter/section boundaries are detected later by `integrate_chapters.py` |
 | Images | N/A (no embedded images) |
-| Output | Wrap in structured markdown with detected headings |
+| Output | Content written as-is to `extracted.md` |
 
 **Script template:** `scripts/extract_txt.py`
 
@@ -20,7 +20,7 @@ Detailed processing strategies for each supported file type.
 |--------|----------|
 | Library | `python-docx` |
 | Text extraction | Traverse `document.paragraphs`, preserve `style.name` for heading detection |
-| Images | Traverse paragraph XML for `w:drawing` elements, map `r:embed` to relationship part; save as PNG to `images/` |
+| Images | Two paths: (a) iterate `doc.part.rels` for all image relationships and export blobs, (b) traverse paragraph XML for `w:drawing` elements and map `r:embed` to the relationship filename |
 | Tables | Convert `document.tables` to Markdown table format |
 | Headings | Use built-in heading styles (Heading 1 → `#`, Heading 2 → `##`, etc.) |
 | Lists | Detect list paragraphs via style name and `w:numPr`; use bullet format |

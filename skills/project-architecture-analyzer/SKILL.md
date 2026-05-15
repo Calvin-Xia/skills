@@ -46,6 +46,20 @@ digraph when_flowchart {
 
 This skill provides: tech stack detection, module dependency analysis, performance/security risk identification, phased planning (short/mid/long term), and feasibility assessment with measurable criteria.
 
+## Environment Check (MANDATORY FIRST STEP)
+
+1. **Python libraries**: Run `pip install PyYAML` if missing. Verify with:
+   `python -c "import yaml; print('OK')"`
+
+2. **Script availability**: Verify scripts are executable:
+   ```bash
+   python scripts/analyze_tech_stack.py --help
+   python scripts/detect_dependencies.py --help
+   python scripts/generate_report.py --help
+   ```
+
+3. **Project access**: Ensure the target repository path is accessible and readable. Use `LS` and `Read` tools to navigate.
+
 ## Workflow
 
 ### Phase 1: Architecture Analysis
@@ -132,75 +146,13 @@ Complement automated analysis with:
 
 ### Phase 3: Requirement Planning
 
-#### Short-term Goals (1-2 months)
+Use the templates in `assets/report-template/roadmap-template.md` for structured goal formatting. Apply SMART criteria from `[references/metrics-standards.md](references/metrics-standards.md)` and MoSCoW/OKR methods from `[references/planning-framework.md](references/planning-framework.md)` to define milestones and resource estimates.
 
-Focus on quick wins and critical fixes:
+**Short-term Goals (1-2 months):** Focus on quick wins — critical security fixes, circular dependency resolution, missing tests for critical paths, vulnerable dependency updates.
 
-```markdown
-## Short-term Goals
+**Mid-term Goals (3-6 months):** Architecture improvements — refactor to reduce coupling, implement CI/CD pipeline, add comprehensive test coverage, performance optimization.
 
-### Goal: [Title]
-- **Priority**: P0/P1
-- **Description**: [What and why]
-- **Success Metrics**: [Quantifiable measures]
-- **Acceptance Criteria**:
-  - [ ] Criterion 1
-  - [ ] Criterion 2
-- **Effort**: [Story points or time estimate]
-- **Dependencies**: [What must happen first]
-```
-
-**Typical short-term items:**
-- Fix critical security issues
-- Resolve circular dependencies
-- Add missing tests for critical paths
-- Update vulnerable dependencies
-
-#### Mid-term Goals (3-6 months)
-
-Focus on architecture improvements:
-
-```markdown
-## Mid-term Goals
-
-### Goal: [Title]
-- **Description**: [What and why]
-- **Milestones**:
-  - M1 (Month 1): [Deliverable]
-  - M2 (Month 2): [Deliverable]
-  - M3 (Month 3): [Deliverable]
-- **Success Metrics**: [Quantifiable measures]
-- **Resource Requirements**: [Team, tools, budget]
-```
-
-**Typical mid-term items:**
-- Refactor to reduce coupling
-- Implement CI/CD pipeline
-- Add comprehensive test coverage
-- Performance optimization
-
-#### Long-term Goals (6+ months)
-
-Focus on strategic initiatives:
-
-```markdown
-## Long-term Goals
-
-### Goal: [Title]
-- **Vision**: [Future state description]
-- **Strategic Value**: [Business impact]
-- **Evolution Path**:
-  - Phase 1: [Foundation]
-  - Phase 2: [Expansion]
-  - Phase 3: [Optimization]
-- **Investment Required**: [Time, people, budget]
-```
-
-**Typical long-term items:**
-- Architecture migration (monolith to microservices)
-- Platform modernization
-- Team capability building
-- Technical debt elimination
+**Long-term Goals (6+ months):** Strategic initiatives — architecture migration (e.g., monolith to microservices), platform modernization, team capability building, technical debt elimination.
 
 ### Phase 4: Feasibility Assessment
 
@@ -254,6 +206,26 @@ Use the report templates in `assets/report-template/`:
 - **[roadmap-template.md](assets/report-template/roadmap-template.md)** — Phased requirement planning structure
 
 Key sections to include: Executive Summary, Tech Stack Analysis, Module Architecture, Issues (P0-P3), Recommendations, Feasibility Assessment.
+
+## Example
+
+**Input:** A Node.js Express project at `./my-api/`
+
+**Phase 1 — Automated analysis:**
+```bash
+python scripts/analyze_tech_stack.py ./my-api/
+# → tech_stack.json: Express 4.x, PostgreSQL, no auth, no caching
+python scripts/detect_dependencies.py ./my-api/
+# → dependencies.json: 12 modules, 1 circular dependency detected
+```
+
+**Phase 2-3 — Manual review + planning:** P0: Add authentication middleware. P1: Resolve circular dependency in `utils/` ↔ `services/`. P2: Add test coverage for critical paths.
+
+**Phase 5 — Output:**
+```
+reports/
+└── my-api-architecture-report.md    # Full report with P0-P3 issues, SMART goals, feasibility matrix
+```
 
 ## Reference Files
 
@@ -310,6 +282,12 @@ These are **hard stops** — when you encounter them, you MUST take the specifie
 | 🔴 Project has 0 dependencies or is empty | MUST warn user and ask if analysis should proceed on limited data |
 | 🔴 Script output contradicts manual findings | MUST flag discrepancy. Do not silently trust one over the other. |
 
+### Why These Are Hard Stops
+
+- **Scripts required before manual review**: Automated analysis provides objective data (module counts, dependency graphs, coupling metrics) that human review alone cannot produce. Skipping scripts means relying on biased, incomplete impressions.
+- **Security-sensitive file protection**: Exposing `.env` files or secrets in reports creates real security incidents. These files must be noted by name only, never read for content.
+- **Script/manual discrepancy**: When automated tools and human review disagree, both could be wrong. Flagging the discrepancy forces investigation rather than silent assumption.
+
 ## Rationalization Counter-Table
 
 When you catch yourself thinking these thoughts, read the reality:
@@ -343,10 +321,4 @@ When you catch yourself thinking these thoughts, read the reality:
 5. **Mixed language project**: Document each language separately. Note integration points between language ecosystems.
 6. **Legacy project (no VCS, no docs)**: Flag as high-risk. Recommend documentation and VCS setup as P0 goals.
 
-## Best Practices
 
-1. **Start with automated analysis** - Run scripts first, then validate manually
-2. **Prioritize by impact** - Focus on P0/P1 issues before optimization
-3. **Make goals measurable** - Use SMART criteria for all recommendations
-4. **Consider constraints** - Account for team size, timeline, and budget
-5. **Iterate incrementally** - Break large changes into smaller, safe steps

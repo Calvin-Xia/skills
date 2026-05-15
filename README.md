@@ -4,9 +4,9 @@ A collection of AI agent skills for code analysis, documentation generation, and
 
 | Skill | Quality Score | Status |
 |-------|:------------:|--------|
-| course-review-material | 8.6 / 10 | 🟢 Production-ready |
-| project-architecture-analyzer | 8.0 / 10 | 🟢 Production-ready |
-| prd-generator | 8.0 / 10 | 🟢 Production-ready |
+| course-review-material | 93% (A) | 🟢 Production-ready |
+| project-architecture-analyzer | 93% (A) | 🟢 Production-ready |
+| prd-generator | 85% (B+) | 🟢 Production-ready |
 
 ## Included Skills
 
@@ -48,7 +48,7 @@ Analyze code repositories to identify feature gaps, improvement opportunities, a
 
 **Supported Languages:** JavaScript/TypeScript, Python, Go, Rust, Java/Kotlin
 
-**Guard Rules:** 7 STOP Signs, 6 Rationalization Counter-Table entries, 6 Red Flags
+**Guard Rules:** 6 STOP Signs, 6 Rationalization Counter-Table entries, 6 Red Flags
 
 ---
 
@@ -122,7 +122,9 @@ skills/
 │   ├── assets/               # Output templates
 │   │   └── output-templates.md
 │   ├── references/           # Detailed processing guides
-│   │   └── file-processing-guide.md
+│   │   ├── file-processing-guide.md
+│   │   ├── content-handling.md
+│   │   └── chapter-detection.md
 │   └── scripts/              # Extraction and integration utilities
 │       ├── extract_docx.py
 │       ├── extract_pdf.py
@@ -166,14 +168,19 @@ All skills are validated against the [writing-skills](https://agentskills.io/spe
 | Requirement | course-review | project-arch | prd-gen |
 |-------------|:------------:|:------------:|:-------:|
 | YAML frontmatter | ✅ | ✅ | ✅ |
+| CSO (description) | ✅ | ✅ | ✅ |
 | Overview + Core Principle | ✅ | ✅ | ✅ |
 | When to Use + Flowchart | ✅ | ✅ | ✅ |
+| Environment Check | ✅ | ✅ | ✅ |
+| Output Format / Example | ✅ | ✅ | ✅ |
 | Quick Reference | ✅ | ✅ | ✅ |
 | Common Mistakes | ✅ | ✅ | ✅ |
-| STOP Signs | ✅ | ✅ | ✅ |
+| STOP Signs (6) | ✅ | ✅ | ✅ |
+| Why These Are Hard Stops | ✅ | ✅ | ✅ |
 | Rationalization Counter-Table | ✅ | ✅ | ✅ |
 | Red Flags | ✅ | ✅ | ✅ |
 | Edge Cases | ✅ | ✅ | ✅ |
+| Script / Reference Files | ✅ (5+3) | ✅ (3+5) | ✅ (0+3) |
 
 ## License
 

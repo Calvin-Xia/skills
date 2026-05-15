@@ -52,13 +52,20 @@ def render_page_to_png(doc, page_num, pages_dir, dpi=200):
     return page_path
 
 
+def _has_cjk_garbled(text):
+    replacement_count = text.count("\ufffd")
+    if replacement_count > 0 and replacement_count / max(len(text), 1) > 0.02:
+        return True
+    return False
+
+
 def extract_table_as_md(table):
     rows = table
     if not rows:
         return ""
 
     header = rows[0]
-    if header is None:
+    if header is None or all(c is None or str(c).strip() == "" for c in header):
         return ""
 
     md_lines = []
@@ -81,6 +88,8 @@ def extract_pdf(filepath, output_dir, dpi=200, password=None):
     os.makedirs(text_dir, exist_ok=True)
     os.makedirs(images_dir, exist_ok=True)
     os.makedirs(pages_dir, exist_ok=True)
+
+    print(f"[extract] processing: {filepath}")
 
     md_lines = []
     raw_texts = []
@@ -106,8 +115,12 @@ def extract_pdf(filepath, output_dir, dpi=200, password=None):
                 text_len = 0
 
             if text_len > 50:
-                md_lines.append(text + "\n")
-                raw_texts.append(text)
+                stripped = text.strip()
+                md_lines.append(stripped + "\n")
+                raw_texts.append(stripped)
+
+                if _has_cjk_garbled(stripped):
+                    print(f"[warn] page {page_num + 1}: possible CJK font encoding issue detected, consider multimodal recognition")
 
                 tables = page.extract_tables()
                 for table in tables:
