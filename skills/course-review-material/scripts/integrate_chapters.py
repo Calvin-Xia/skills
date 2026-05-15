@@ -62,11 +62,6 @@ def _find_extracted_md(file_path, config_dir, file_entry):
     if extracted_md.exists():
         return extracted_md
 
-    stem = file_path.stem
-    alt_name = file_path.parent / stem / "extracted.md"
-    if alt_name != extracted_md and alt_name.exists():
-        return alt_name
-
     config_adjacent = config_dir / file_path.name
     candidate = config_adjacent.parent / config_adjacent.stem / "extracted.md"
     if candidate.exists():

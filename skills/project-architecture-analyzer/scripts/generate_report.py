@@ -96,7 +96,7 @@ class ReportGenerator:
             report.append(f"- **框架**: {', '.join(all_frameworks[:5])}")
         
         health_score = self._calculate_health_score()
-        health_map = {4: "优秀", 3: "良好", 2: "一般", 1: "需改进"}
+        health_map = {5: "优秀", 4: "良好", 3: "一般", 2: "需改进", 1: "严重"}
         report.append(f"- **整体健康度**: {health_map.get(health_score, '未知')}")
         
         report.append("\n---\n")
@@ -171,7 +171,7 @@ class ReportGenerator:
         return "\n".join(report)
     
     def _calculate_health_score(self) -> int:
-        score = 4
+        score = 5
         
         if self.dependencies.get("circular_dependencies"):
             score -= 1
@@ -180,28 +180,38 @@ class ReportGenerator:
         if coupling.get("avg_instability", 0) > 0.8:
             score -= 1
         
-        if len(self.issues["P0"]) > 0 or len(self.issues["P1"]) > 2:
+        if len(self.issues["P0"]) > 0:
+            score -= 2
+        if len(self.issues["P1"]) > 2:
+            score -= 1
+        if len(self.issues["P2"]) > 5:
+            score -= 1
+        if len(self.issues["P3"]) > 3:
             score -= 1
         
         return max(1, score)
     
     def _generate_recommendations(self) -> str:
         recommendations = []
-        
+        counter = 1
+
         if self.dependencies.get("circular_dependencies"):
-            recommendations.append("1. **解决循环依赖**: 重构模块结构，引入接口或事件机制解耦")
-        
+            recommendations.append(f"{counter}. **解决循环依赖**: 重构模块结构，引入接口或事件机制解耦")
+            counter += 1
+
         if not self.tech_stack.get("devops"):
-            recommendations.append("2. **建立CI/CD流程**: 添加自动化测试和部署流程")
-        
+            recommendations.append(f"{counter}. **建立CI/CD流程**: 添加自动化测试和部署流程")
+            counter += 1
+
         coupling = self.dependencies.get("coupling_metrics", {})
         if coupling.get("avg_instability", 0) > 0.7:
-            recommendations.append("3. **降低模块耦合**: 考虑引入依赖注入或接口抽象")
-        
+            recommendations.append(f"{counter}. **降低模块耦合**: 考虑引入依赖注入或接口抽象")
+            counter += 1
+
         if not recommendations:
             recommendations.append("1. **持续监控**: 定期进行架构审查，保持代码质量")
             recommendations.append("2. **文档完善**: 补充架构设计文档和API文档")
-        
+
         return "\n".join(recommendations)
 
 

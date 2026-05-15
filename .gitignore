@@ -1,3 +1,5 @@
 .trae/
 *.pdf
 __pycache__/
+*.docx
+*.pptx

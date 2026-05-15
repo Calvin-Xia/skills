@@ -20,13 +20,14 @@ except ImportError:
     sys.exit(1)
 
 def extract_images_from_docx(doc, output_dir):
-    images_dir = os.path.join(output_dir, "images")
-    os.makedirs(images_dir, exist_ok=True)
     rId_to_filename = {}
     img_counter = 0
 
     for rel in doc.part.rels.values():
         if "image" in rel.reltype:
+            if not img_counter:
+                images_dir = os.path.join(output_dir, "images")
+                os.makedirs(images_dir, exist_ok=True)
             image = rel.target_part
             ext = os.path.splitext(image.partname)[1]
             if not ext:

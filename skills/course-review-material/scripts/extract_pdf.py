@@ -114,18 +114,23 @@ def extract_pdf(filepath, output_dir, dpi=200, password=None):
             else:
                 text_len = 0
 
-            if text_len > 50:
+            if text_len > 100:
                 stripped = text.strip()
-                md_lines.append(stripped + "\n")
-                raw_texts.append(stripped)
 
                 if _has_cjk_garbled(stripped):
-                    print(f"[warn] page {page_num + 1}: possible CJK font encoding issue detected, consider multimodal recognition")
+                    image_page_count += 1
+                    png_path = render_page_to_png(fitz_doc, page_num, pages_dir, dpi)
+                    rel_path = os.path.relpath(png_path, output_dir)
+                    md_lines.append(f"![Page {page_num + 1}]({rel_path})\n")
+                    md_lines.append(f"<!-- page source: page_{page_num + 1:03d}.png (needs multimodal recognition; CJK text garbled) -->\n")
+                else:
+                    md_lines.append(stripped + "\n")
+                    raw_texts.append(stripped)
 
-                tables = page.extract_tables()
-                for table in tables:
-                    if table:
-                        md_lines.append("\n" + extract_table_as_md(table) + "\n")
+                    tables = page.extract_tables()
+                    for table in tables:
+                        if table:
+                            md_lines.append("\n" + extract_table_as_md(table) + "\n")
 
             else:
                 image_page_count += 1

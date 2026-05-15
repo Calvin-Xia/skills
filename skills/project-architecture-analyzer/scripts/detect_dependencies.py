@@ -185,14 +185,15 @@ class DependencyDetector:
             
             resolved = '/'.join(current)
             
-            for ext in ['.js', '.ts', '.jsx', '.tsx', '.py', '.go']:
+            for ext in ['.js', '.ts', '.jsx', '.tsx', '.py', '.go', '.java']:
                 test_path = resolved + ext
                 if test_path in self.modules:
                     return test_path
             
-            index_path = resolved + '/index.js'
-            if index_path in self.modules:
-                return index_path
+            for index_base in ['/index.js', '/index.ts', '/index.java']:
+                index_path = resolved + index_base
+                if index_path in self.modules:
+                    return index_path
         
         for module in self.modules:
             if import_path in module or module.endswith(import_path.replace('/', os.sep) + '.py'):
@@ -248,7 +249,7 @@ class DependencyDetector:
             "avg_instability": sum(instability.values()) / len(instability) if instability else 0,
             "high_coupling_modules": [
                 m for m, i in instability.items() 
-                if i > 0.7 or i < 0.3
+                if i > 0.7 or (0 < i < 0.3)
             ]
         }
     

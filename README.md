@@ -159,6 +159,21 @@ skills/
         ├── analyze_tech_stack.py
         ├── detect_dependencies.py
         └── generate_report.py
+tests/
+├── test_analyze_tech_stack_django.py
+├── test_detect_dependencies_instability.py
+├── test_extract_pdf_cjk.py
+├── test_feature_template_format.py
+└── test_health_score.py
+```
+
+## Testing
+
+Run all tests:
+
+```bash
+python tests/test_score_writing_skills.py           # writing-skills checklist compliance (all skills)
+Get-ChildItem tests/test_*.py | % { python $_ }    # all unit + quality tests
 ```
 
 ## Quality Standards

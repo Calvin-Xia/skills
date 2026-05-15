@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run test_analyze_tech_stack_django
+        run: python tests/test_analyze_tech_stack_django.py
+
+      - name: Run test_extract_pdf_cjk
+        run: python tests/test_extract_pdf_cjk.py
+
+      - name: Run test_feature_template_format
+        run: python tests/test_feature_template_format.py
+
+      - name: Run test_detect_dependencies_instability
+        run: python tests/test_detect_dependencies_instability.py
+
+      - name: Run test_health_score
+        run: python tests/test_health_score.py

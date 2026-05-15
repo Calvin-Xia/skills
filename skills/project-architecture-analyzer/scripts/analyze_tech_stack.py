@@ -270,6 +270,9 @@ class TechStackAnalyzer:
             if 'Django' not in self.results["frameworks"]["backend"]:
                 self.results["frameworks"]["backend"].append('Django')
         
+        if 'Django' not in self.results["frameworks"]["backend"]:
+            self._check_django_in_deps()
+        
         if (self.project_path / 'main.py').exists() or (self.project_path / 'app.py').exists():
             content = ""
             for fname in ['main.py', 'app.py']:
@@ -285,6 +288,29 @@ class TechStackAnalyzer:
                 self.results["frameworks"]["backend"].append('FastAPI')
             if 'Flask' in content and 'Flask' not in self.results["frameworks"]["backend"]:
                 self.results["frameworks"]["backend"].append('Flask')
+    def _check_django_in_deps(self):
+        req_path = self.project_path / 'requirements.txt'
+        if req_path.exists():
+            try:
+                content = req_path.read_text(encoding='utf-8', errors='ignore')
+                if re.search(r'^[Dd]jango\b', content, re.MULTILINE):
+                    self.results["frameworks"]["backend"].append('Django')
+                    return
+            except IOError:
+                pass
+        
+        toml_path = self.project_path / 'pyproject.toml'
+        if toml_path.exists():
+            try:
+                content = toml_path.read_text(encoding='utf-8', errors='ignore')
+                if re.search(r'[Dd]jango', content):
+                    self.results["frameworks"]["backend"].append('Django')
+                    return
+            except IOError:
+                pass
+        
+        if (self.project_path / 'settings.py').exists():
+            self.results["frameworks"]["backend"].append('Django')
     
     def _detect_databases(self):
         db_indicators = {

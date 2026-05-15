@@ -143,48 +143,56 @@ def _render_slides_to_png(pptx_path, slides_dir, dpi):
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
             tmp_pdf = tmp.name
 
-        import platform
-        if platform.system() == "Windows":
-            import comtypes.client
+        try:
+            import platform
+            if platform.system() == "Windows":
+                try:
+                    import comtypes.client
+                except ImportError:
+                    print("[warn] comtypes not installed. Install with: pip install comtypes")
+                    print("[warn] Slide rendering on Windows requires comtypes + PowerPoint.")
+                    return
 
-            powerpoint = None
-            try:
-                powerpoint = comtypes.client.CreateObject("PowerPoint.Application")
-                powerpoint.Visible = False
-                deck = powerpoint.Presentations.Open(os.path.abspath(pptx_path))
-                deck.SaveAs(os.path.abspath(tmp_pdf), 32)
-                deck.Close()
-            finally:
-                if powerpoint is not None:
-                    try:
-                        powerpoint.Quit()
-                    except Exception:
-                        pass
-        else:
-            import subprocess
+                powerpoint = None
+                try:
+                    powerpoint = comtypes.client.CreateObject("PowerPoint.Application")
+                    powerpoint.Visible = False
+                    deck = powerpoint.Presentations.Open(os.path.abspath(pptx_path))
+                    deck.SaveAs(os.path.abspath(tmp_pdf), 32)
+                    deck.Close()
+                finally:
+                    if powerpoint is not None:
+                        try:
+                            powerpoint.Quit()
+                        except Exception:
+                            pass
+            else:
+                import subprocess
 
-            result = subprocess.run(
-                ["libreoffice", "--headless", "--convert-to", "pdf",
-                 "--outdir", os.path.dirname(tmp_pdf), pptx_path],
-                capture_output=True, text=True
-            )
-            if result.returncode != 0:
-                print(f"[warn] LibreOffice conversion failed: {result.stderr}")
-                print("[warn] Slide rendering skipped. Install LibreOffice or use --no-render.")
+                result = subprocess.run(
+                    ["libreoffice", "--headless", "--convert-to", "pdf",
+                     "--outdir", os.path.dirname(tmp_pdf), pptx_path],
+                    capture_output=True, text=True
+                )
+                if result.returncode != 0:
+                    print(f"[warn] LibreOffice conversion failed: {result.stderr}")
+                    print("[warn] Slide rendering skipped. Install LibreOffice or use --no-render.")
+                    return
+
+            doc = fitz.open(tmp_pdf)
+            for page_num in range(len(doc)):
+                page = doc[page_num]
+                mat = fitz.Matrix(dpi / 72, dpi / 72)
+                pix = page.get_pixmap(matrix=mat)
+                slide_path = os.path.join(slides_dir, f"slide_{page_num + 1:03d}.png")
+                pix.save(slide_path)
+
+            doc.close()
+            print(f"[render] {len(os.listdir(slides_dir))} slides rendered to {slides_dir}")
+
+        finally:
+            if os.path.exists(tmp_pdf):
                 os.unlink(tmp_pdf)
-                return
-
-        doc = fitz.open(tmp_pdf)
-        for page_num in range(len(doc)):
-            page = doc[page_num]
-            mat = fitz.Matrix(dpi / 72, dpi / 72)
-            pix = page.get_pixmap(matrix=mat)
-            slide_path = os.path.join(slides_dir, f"slide_{page_num + 1:03d}.png")
-            pix.save(slide_path)
-
-        doc.close()
-        os.unlink(tmp_pdf)
-        print(f"[render] {len(os.listdir(slides_dir))} slides rendered to {slides_dir}")
 
     except Exception as e:
         print(f"[warn] Slide rendering failed: {e}")
